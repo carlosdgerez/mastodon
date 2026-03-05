@@ -27,6 +27,9 @@ That will download the necesary Images and start the containers. It will take se
 Mastodon many components are very strict about certificate keys, and that made it more secure.
 However that is an issue if we want just explore the code and see how it works without spend on a Domain or a certificate. Then I found this to be a solution to the problem.
 
+Since you are runing on your machine first remove the keys that run in my machine only. 
+
+
 
 Best Solution for Local HTTPS
 
