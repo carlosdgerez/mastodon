@@ -86,3 +86,4 @@ storybook-static
 *.pem
 *.key
 *.crt
+certs/

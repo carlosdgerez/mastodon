@@ -57,7 +57,11 @@ Or download from:
 https://github.com/FiloSottile/mkcert
 
 # 2 — Install local CA
-localhost+1-key.pem
+run: 
+
+mkcert -install
+mkcert localhost 127.0.0.1
+
 
 This generates:
 
@@ -72,7 +76,7 @@ Use Caddy instead of Nginx.
 
 Caddy auto-handles HTTPS beautifully.
 
-Example:
+Example in the docker-compose-local:
 
 caddy:
   image: caddy:2
@@ -83,12 +87,13 @@ caddy:
     - ./localhost+1.pem:/cert.pem
     - ./localhost+1-key.pem:/key.pem
 
-Caddyfile:
+And in the Caddyfile:
 
 https://localhost {
-  tls /cert.pem /key.pem
+  tls /cert.pem /key.pem 
   reverse_proxy web:3000
 }
+The tls line define where the keys reside as defined in the Docker-compose-local file
 
 Much simpler than Nginx.
 
@@ -97,6 +102,7 @@ Detailed steps:
 
  mkcert -install
  mkcert localhost 127.0.0.1
+
 Created a new local CA 💥
 The local CA is now installed in the system trust store! ⚡️
 Note: Firefox support is not available on your platform. ℹ️
@@ -110,7 +116,8 @@ The certificate is at "./localhost+1.pem" and the key at "./localhost+1-key.pem"
 
 It will expire on 4 June 2028 🗓
 
-
+Important: Even is a local certificate many browsers will consider it dangerous, then you will has 
+to go to https:localhost only and accept the risks ( that are not because is your own certificate)
 
 
 
