@@ -8,7 +8,7 @@ This guide explains how to set up Mastodon locally using Docker, HTTPS via mkcer
 
 ### Docker
 
-- **Linux**: Install Docker Engine from your distro package manager.
+- **Linux**: Install Docker Engine from your distro package manager. There is also a Docker Desktop for Linux.
 - **Windows**: Install [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/).
 
 **Docker Desktop Key Details:**
