@@ -213,3 +213,8 @@ docker compose -f docker-compose-local.yml exec web bin/tootctl accounts modify 
 7. Create admin account using `tootctl`  
 8. Access Mastodon locally at [https://localhost](https://localhost)
 
+
+
+## Mastodon Local Architecture
+
+![Mastodon local Docker architecture](./mastodon-local-diagram.png)
