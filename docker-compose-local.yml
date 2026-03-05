@@ -1,0 +1,83 @@
+
+
+services:
+  db:
+    restart: always
+    image: postgres:14-alpine
+    shm_size: 256mb
+    networks:
+      - internal_network
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'postgres']
+    volumes:
+      - ./postgres14:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+
+  redis:
+    restart: always
+    image: redis:7-alpine
+    networks:
+      - internal_network
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+    volumes:
+      - ./redis:/data
+
+  web:
+    image: ghcr.io/mastodon/mastodon:v4.5.7
+    restart: always
+    env_file: .env.production
+    command: bundle exec puma -C config/puma.rb
+    ports:
+      - "3000:3000"  # map container port 3000 to host 3000
+    networks:
+      - internal_network
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./public/system:/mastodon/public/system
+
+  streaming:
+    image: ghcr.io/mastodon/mastodon-streaming:v4.5.7
+    restart: always
+    env_file: .env.production
+    command: node ./streaming/index.js
+    networks:
+      - internal_network
+    depends_on:
+      - db
+      - redis
+
+  sidekiq:
+    image: ghcr.io/mastodon/mastodon:v4.5.7
+    restart: always
+    env_file: .env.production
+    command: bundle exec sidekiq
+    networks:
+      - internal_network
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - ./public/system:/mastodon/public/system
+
+  caddy:
+    image: caddy:2
+    restart: always
+    ports:
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./localhost+1.pem:/cert.pem
+      - ./localhost+1-key.pem:/key.pem
+    networks:
+      - internal_network
+    depends_on:
+      - web
+      - streaming
+
+networks:
+  internal_network:
+    internal: false

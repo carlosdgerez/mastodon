@@ -1,0 +1,24 @@
+https://localhost {
+
+    tls /cert.pem /key.pem
+
+    # WebSocket / Streaming API
+    reverse_proxy /api/v1/streaming* streaming:4000 {
+        # Let Caddy use default transport; do NOT force versions
+        header_up Host {host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # Rails web application
+    reverse_proxy web:3000 {
+        header_up Host {host}
+        # X-Forwarded headers are optional, Caddy adds them by default
+    }
+
+    # Optional HTTP → HTTPS redirect
+    @http {
+        protocol http
+    }
+    redir @http https://{host}{uri} permanent
+}
