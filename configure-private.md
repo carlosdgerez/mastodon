@@ -1,287 +1,215 @@
-To start mastodon from a Docker container, first download Docker if you are in Linux or instal Docker Desktop in Windows. 
+# Mastodon Local Development Guide
 
-Docker Desktop: 
+This guide explains how to set up Mastodon locally using Docker, HTTPS via mkcert, and Caddy, including common debugging steps.
 
-Key Details and Requirements:
+---
 
-    What it is: A comprehensive tool allowing developers to run Linux or Windows containers on Windows, featuring built-in Kubernetes and easy integration with development tools.
-    System Requirements:
-        OS: Windows 10/11 64-bit, Home/Pro/Enterprise/Education (22H2 or higher).
-        Hardware: 64-bit processor with Second Level Address Translation (SLAT).
-        RAM: 4GB minimum, though more is recommended.
-        Virtualization: Enabled in BIOS/UEFI.
-    Backend Technology: WSL 2 (Windows Subsystem for Linux 2) is highly recommended for better performance and speed compared to Hyper-V.
-    Installation: Requires Administrator privileges for installation, but can be used by standard users afterward
-https://docs.docker.com/desktop/setup/install/windows-install/
+## 1. Prerequisites
 
-The you will have the Docker Engine plus the GUI. 
+### Docker
 
-Clone this repository and run in the directory:
+- **Linux**: Install Docker Engine from your distro package manager. There is also a Docker Desktop for Linux.
+- **Windows**: Install [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/).
 
-docker compose -f docker-compose-local.yml up
+**Docker Desktop Key Details:**
 
-That will download the necesary Images and start the containers. It will take several minutes the first time depending on your machine. 
+- OS: Windows 10/11 64-bit (22H2 or higher)  
+- CPU: 64-bit with SLAT  
+- RAM: 4GB+ recommended  
+- Virtualization: Enabled in BIOS/UEFI  
+- Backend: WSL2 recommended for best performance
 
-### Mastodon issues
+---
 
-Mastodon many components are very strict about certificate keys, and that made it more secure.
-However that is an issue if we want just explore the code and see how it works without spend on a Domain or a certificate. Then I found this to be a solution to the problem.
+## 2. Clone the repository
 
-Since you are runing on your machine first remove the keys that run in my machine only. 
-
+```bash
+git clone <https://github.com/carlosdgerez/mastodon-test.git>
+cd <repo-directory>
+```
 
 
-Best Solution for Local HTTPS
+---
 
-🥇 Option 1 (Recommended): Use mkcert
+## 3. Start Docker containers
 
-This is the cleanest solution.
+```bash
+docker compose -f docker-compose-local.yml up -d
+```
 
-# What mkcert does:
+- First run will pull all images and start the containers.  
+- Check container status:
 
-- Generates a local Certificate Authority (CA)
+```bash
+docker compose ps
+```
 
-- Installs it in your system trust store
+---
 
-- Generates trusted local SSL certs
+## 4. Handling HTTPS locally
 
-- Your browser will NOT show warnings
+### Step 1 — Install mkcert
 
-# Step 1 — Install mkcert
+- Windows (PowerShell):
 
-On Windows (PowerShell):
-
+```powershell
 choco install mkcert
+```
 
-Or download from:
-https://github.com/FiloSottile/mkcert
+- Or download from: [https://github.com/FiloSottile/mkcert](https://github.com/FiloSottile/mkcert)
 
-# 2 — Install local CA
-run: 
+### Step 2 — Generate local CA and certificates
 
+```bash
 mkcert -install
 mkcert localhost 127.0.0.1
+```
 
+This creates:
+- `localhost+1.pem` → certificate  
+- `localhost+1-key.pem` → private key
 
-This generates:
+### Step 3 — Configure Caddy
 
-localhost+1.pem
-localhost+1-key.pem
+**docker-compose-local.yml:**
 
-------------
-
-🔥 Even Better (Ultra Clean)
-
-Use Caddy instead of Nginx.
-
-Caddy auto-handles HTTPS beautifully.
-
-Example in the docker-compose-local:
-
+```yaml
 caddy:
   image: caddy:2
+  restart: always
   ports:
     - "443:443"
   volumes:
     - ./Caddyfile:/etc/caddy/Caddyfile
-    - ./localhost+1.pem:/cert.pem
-    - ./localhost+1-key.pem:/key.pem
+    - ./certs/localhost+1.pem:/cert.pem
+    - ./certs/localhost+1-key.pem:/key.pem
+  networks:
+    - internal_network
+  depends_on:
+    - web
+    - streaming
+```
 
-And in the Caddyfile:
+**Caddyfile:**
 
+```caddy
 https://localhost {
-  tls /cert.pem /key.pem 
-  reverse_proxy web:3000
+    tls /cert.pem /key.pem
+
+    reverse_proxy /api/v1/streaming* streaming:4000 {
+        transport http
+    }
+
+    reverse_proxy web:3000 {
+        transport http
+    }
+
+    @http {
+        protocol http
+    }
+    redir @http https://{host}{uri} permanent
 }
-The tls line define where the keys reside as defined in the Docker-compose-local file
+```
 
-Much simpler than Nginx.
+> Key points:
+> - `transport http` ensures Caddy connects to Puma over HTTP (not HTTPS).
+> - TLS termination happens at Caddy, your browser sees HTTPS.
 
+---
 
-Detailed steps: 
+## 5. Rails secrets and encryption keys
 
- mkcert -install
- mkcert localhost 127.0.0.1
+### Secret key base
 
-Created a new local CA 💥
-The local CA is now installed in the system trust store! ⚡️
-Note: Firefox support is not available on your platform. ℹ️
-
-
-Created a new certificate valid for the following names 📜
- - "localhost"
- - "127.0.0.1"
-
-The certificate is at "./localhost+1.pem" and the key at "./localhost+1-key.pem" ✅
-
-It will expire on 4 June 2028 🗓
-
-Important: Even is a local certificate many browsers will consider it dangerous, then you will has 
-to go to https:localhost only and accept the risks ( that are not because is your own certificate)
-
-
-
-## The Keys problem
-
-Mastodon is running in production mode inside Docker.
-
-Rails expects ENV["SECRET_KEY_BASE"] (or via credentials).
-
-Neither .env.production nor credentials contain a secret_key_base.
-
-Web (puma) and Sidekiq crash immediately because Rails refuses to boot.
-
-Without this, any attempt to generate encryption keys with db:encryption:init will fail, because Rails can’t even load the application to run the task.
-
-How to fix
-
-
-Option 1 — Generate a secret key manually
-
-Generate a random key:
-
+```bash
 docker compose run --rm web bin/rails secret
+```
+- Copy the output and add it to `.env.production`:
 
-It will output a long string, e.g.:
+```env
+SECRET_KEY_BASE=<generated-key>
+```
 
-a7f6c4b8e2f… (96 chars)
+### ActiveRecord encryption keys
 
-Add it to your .env.production:
-
-SECRET_KEY_BASE=a7f6c4b8e2f...
-
-Rebuild/restart Docker Compose:
-
-docker compose -f docker-compose-local.yml up -d
-
-Now Rails can start.
-
-
-
-
-
-
-
-
-
-
-Before run the docker-compose-local, or if they are running  run this:
-
+```bash
 docker compose -f docker-compose-local.yml down
-
-
-Then: 
-
 docker compose run --rm web bin/rails db:encryption:init
-It will show the next text that has to be copied to .env.production
-Off course the key will vary.
+```
+- Copy the output values to `.env.production`:
 
-# Do NOT change these variables once they are set
-ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=xGC3cy0IyAyCoCS4d3YArUZ5bsxkZwN9
-ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=h8nNktLoEr9tP48b406vAzcEJvRhER60
-ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=R9zeCLo7odZsos6LO7VU7xuoforckZd8
+```env
+ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=<...>
+ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=<...>
+ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=<...>
+```
+> ⚠️ Do **not change** these keys after setting them.
 
+---
 
-Error database miss tables: 
+## 6. Database setup
 
+### Step 1 — Ensure the database is running
 
-db-1         | 2026-03-04 21:05:39.467 UTC [136] ERROR:  relation "settings" does not exist at character 523
-db-1         | 2026-03-04 21:05:39.467 UTC [136] STATEMENT:  SELECT a.attname, format_type(a.atttypid, a.atttypmod),
-db-1         |         pg_get_expr(d.adbin, d.adrelid), a.attnotnull, a.atttypid, a.atttypmod,                                                                                                      
-db-1         |         c.collname, col_description(a.attrelid, a.attnum) AS comment,
-db-1         |         attidentity AS identity,                                                                                                                                                     
-db-1         |         attgenerated as attgenerated
-db-1         |    FROM pg_attribute a                                                                                                                                                               
-db-1         |    LEFT JOIN pg_attrdef d ON a.attrelid = d.adrelid AND a.attnum = d.adnum
-db-1         |    LEFT JOIN pg_type t ON a.atttypid = t.oid                                                                                                                                         
-db-1         |    LEFT JOIN pg_collation c ON a.attcollation = c.oid AND a.attcollation <> t.typcollation                                                                                           
-db-1         |   WHERE a.attrelid = '"settings"'::regclass
-db-1         |     AND a.attnum > 0 AND NOT a.attisdropped                                                                                                                                          
-db-1         |   ORDER BY a.attnum
-db-1         |                                                                                                                                                                                      
-db-1         | 2026-03-04 21:05:40.411 UTC [136] ERROR:  relation "users" does not exist at character 523
-sidekiq-1    | PG::UndefinedTable: ERROR:  relation "users" does not exist
-sidekiq-1    | LINE 10:  WHERE a.attrelid = '"users"'::regclass
+```bash
+docker compose up -d db
+```
 
-## 💡 Caused by missing tables. Running rails db:setup (or rails db:migrate) inside your web container will fix it. After that, restart the web and Sidekiq containers.
+### Step 2 — Create database and load schema
 
-Solution: 
+```bash
+docker compose run --rm web rails db:setup
+```
 
+> If tables are missing:
 
-Make sure your database container is running
+```bash
+docker compose run --rm web rails db:migrate
+```
 
-Check that your db service is up and accessible:
+---
 
-docker-compose ps
+## 7. Creating users and admin accounts
 
-You should see db running. If it’s not, start it:
+### Create a new account:
 
-docker-compose up -d db
-2️⃣ Create the database
-
-If this is the first time you’re running Mastodon, you need to create the database:
-
-docker-compose run --rm web rails db:setup
-
-This will:
-
-- Create the database
-
-- Load the schema
-
-- Run initial seeds
-
-Tip: If you already have a database but the tables are missing, you might need just:
-
-docker-compose run --rm web rails db:migrate
-
-or:
-
-docker-compose run --rm web rails db:setup
-
-[+]  2/2t 2/22
- ✔ Container mastodon-redis-1 Created                                                                                                                                                          0.2s 
- ✔ Container mastodon-db-1    Running                                                                                                                                                          0.0s 
-Container mastodon-web-run-f524dd4e7df7 Creating 
-Container mastodon-web-run-f524dd4e7df7 Created 
-Database 'postgres' already exists
-
-docker-compose run --rm web rails db:migrate
-
-[+]  2/2t 2/2
- ✔ Container mastodon-redis-1 Running                                                                                                                                                          0.0s 
- ✔ Container mastodon-db-1    Running                                                                                                                                                          0.0s 
-Container mastodon-web-run-bc80d8dc3b52 Creating 
-Container mastodon-web-run-bc80d8dc3b52 Created 
-PS C:\Users\carlo\OneDrive\Desktop\workSearch\LEARNING\svalbard-salg\mastodon> 
-
-
-
-
-
-CREATE ACCOUNT:
-
+```bash
 docker compose -f docker-compose-local.yml exec web bin/tootctl accounts create carlo --email carlo@localhost --confirmed
+```
+- Copy the generated password.
 
-resolve a generated password that has to be copied.
+### Make the user an admin/owner:
 
-New password: cda02eea6de5...............
-
-Now make that user admin:
-
+```bash
 docker compose -f docker-compose-local.yml exec web bin/tootctl accounts modify carlo --role Owner
+```
+> Roles: `User`, `Moderator`, `Admin`, `Owner`
 
+### Log in:
 
-# Role options:
+- Visit [https://localhost](https://localhost) in your browser.
 
-- User
+---
 
-- Moderator
+## 8. Debugging Notes
 
-- Admin
+- **Puma HTTP parse errors** → caused by connecting over HTTPS to non-SSL Puma. Fixed with `transport http` in Caddy.  
+- **Caddy certificate errors** → ensure mkcert-generated certs are mounted correctly.  
+- **Missing Rails secrets** → add `SECRET_KEY_BASE`.  
+- **Missing DB tables** → run `rails db:setup` or `rails db:migrate`.  
+- **Husky/Yarn pre-commit issues** → use Corepack/Yarn 4 to match project `packageManager`.  
+- **Local certificates** → mkcert avoids browser warnings, allowing local HTTPS safely.
 
-- Owner ← full control (recommended)
+---
 
-Now log in at:
+## ✅ Summary
 
-https://localhost
+1. Install Docker and WSL2 (if on Windows)  
+2. Clone repo and start Docker Compose  
+3. Generate local HTTPS certs with mkcert  
+4. Configure Caddy for HTTPS termination  
+5. Generate Rails secrets and encryption keys  
+6. Setup database (`db:setup`)  
+7. Create admin account using `tootctl`  
+8. Access Mastodon locally at [https://localhost](https://localhost)
+
