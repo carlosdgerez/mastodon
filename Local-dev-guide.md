@@ -28,6 +28,7 @@ git clone <https://github.com/carlosdgerez/mastodon-test.git>
 cd <repo-directory>
 ```
 
+
 ---
 
 ## 3. Start Docker containers
