@@ -26,7 +26,7 @@ This guide explains how to set up Mastodon locally using Docker, HTTPS via mkcer
 ## 2. Clone the repository
 
 ```bash
-git clone <https://github.com/carlosdgerez/mastodon-test.git>
+git clone <https://github.com/carlosdgerez/mastodon.git>
 cd <repo-directory>
 ```
 
