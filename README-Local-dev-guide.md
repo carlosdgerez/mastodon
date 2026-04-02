@@ -191,6 +191,10 @@ docker compose -f docker-compose-local.yml exec web bin/tootctl accounts modify 
 
 - Visit [https://localhost](https://localhost) in your browser.
 
+### More commands to populate the local server:  
+
+- [Create, aprove and promote to admin users in Mastodon](/READ-basic-commandsMastodon.md)
+
 ---
 
 ## 8. Debugging Notes
