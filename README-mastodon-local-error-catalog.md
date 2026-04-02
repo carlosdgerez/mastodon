@@ -23,6 +23,7 @@ Mastodon locally.
 10. [Cannot Access Local Web Server](#10-cannot-access-local-web-server)
 11. [Caddy Warning About Unnecessary Headers](#11-caddy-warning-about-unnecessary-headers)
 12. [GitHub Actions CI Failures](#12-github-actions-ci-failures)
+13. [Create, aprove and promote to admin users in Mastodon](/READ-basic-commandsMastodon.md)
 
 ------------------------------------------------------------------------
 
