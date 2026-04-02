@@ -1,4 +1,6 @@
-# Mastodon Local Development Guide
+# Mastodon Local Development Guide 
+
+This is a custome local version of mastodon guide.
 
 This guide explains how to set up Mastodon locally using Docker, HTTPS via mkcert, and Caddy, including common debugging steps.
 
@@ -213,7 +215,8 @@ docker compose -f docker-compose-local.yml exec web bin/tootctl accounts modify 
 7. Create admin account using `tootctl`  
 8. Access Mastodon locally at [https://localhost](https://localhost)
 
-
+Finally, Mastodon local needs as you see many local environments variables and keys.  
+I made a catalog of the most common errors I overcome in settings and you can browse them [on the local errors catalog.](README-mastodon-local-error-catalog.md)
 
 ## Mastodon Local Architecture
 
