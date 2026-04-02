@@ -9,7 +9,7 @@ Mastodon locally.
 
 ------------------------------------------------------------------------
 
-## Table of Contents
+# Table of Contents
 
 1.  [Yarn Version Mismatch (Corepack Required)](#1-yarn-version-mismatch)
 2.  [Husky Pre-Commit Hook Failure](#2-husky-pre-commit-hook-failure)
@@ -55,7 +55,7 @@ versions.
 corepack enable
  ~~~
 
-
+[↑ Back to the top](#table-of-contents)
 ------------------------------------------------------------------------
 
 # 2. Husky Pre Commit Hook Failure
@@ -92,9 +92,7 @@ Or disable the hooks completely:
 rm -rf .husky
  ~~~
 
-
-    
-
+[↑ Back to the top](#table-of-contents)
 ------------------------------------------------------------------------
 
 # 3. HTTP Request Sent to HTTPS Server
@@ -117,7 +115,7 @@ Use the correct protocol:
 instead of:
 
     http://localhost
-
+[↑ Back to the top](#table-of-contents)
 ------------------------------------------------------------------------
 
 # 4. Caddy Certificate Path Error
@@ -147,7 +145,7 @@ Example incorrect mount:
 
 Recreate the certificates and mount them correctly.
 
-
+[↑ Back to the top](#table-of-contents)
 ------------------------------------------------------------------------
 
 # 5. Missing Local TLS Certificates
@@ -186,7 +184,7 @@ These files are then mounted in Docker:
       - ./certs/localhost+1-key.pem:/key.pem
  ~~~
 
-
+[↑ Back to the top](#table-of-contents)
 ------------------------------------------------------------------------
 
 # 6. Puma SSL Parsing Error
@@ -213,7 +211,7 @@ Correct architecture:
     Caddy
        ↓ HTTP
     Puma (web container)
-
+[↑ Back to the top](#table-of-contents)
 ------------------------------------------------------------------------
 
 # 7. Missing Rails Secret Key
@@ -245,7 +243,7 @@ Add to `.env.production`:
 Restart the containers:
 
     docker compose up -d
-
+[↑ Back to the top](#table-of-contents)
 ------------------------------------------------------------------------
 
 # 8. Missing ActiveRecord Encryption Keys
@@ -273,7 +271,7 @@ Add the output to `.env.production`:
     ACTIVE_RECORD_ENCRYPTION_DETERMINISTIC_KEY=...
     ACTIVE_RECORD_ENCRYPTION_KEY_DERIVATION_SALT=...
     ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY=...
-
+[↑ Back to the top](#table-of-contents)
 ------------------------------------------------------------------------
 
 # 9. Missing Database Tables
@@ -306,7 +304,7 @@ Run database setup:
 or run migrations:
 
     docker compose run --rm web rails db:migrate
-
+[↑ Back to the top](#table-of-contents)
 ------------------------------------------------------------------------
 
 # 10. Cannot Access Local Web Server
@@ -331,6 +329,8 @@ instead of
 
     http://127.0.0.1:3000
 
+    
+[↑ Back to the top](#table-of-contents)
 ------------------------------------------------------------------------
 
 # 11. Caddy Warning About Unnecessary Headers
@@ -348,6 +348,7 @@ Caddy automatically forwards these headers by default.
 
 Remove redundant header configuration.
 
+[↑ Back to the top](#table-of-contents)
 ------------------------------------------------------------------------
 
 # 12. GitHub Actions CI Failures
@@ -363,8 +364,9 @@ The upstream Mastodon repository contains extensive CI pipelines, including brow
 
 ### Solution
 
-Disable the workflow or run it manually.
+Disable the workflow or run it manually.  
 
+[↑ Back to the top](#table-of-contents)
 ------------------------------------------------------------------------
 
 ## Resulting Working Architecture
@@ -382,4 +384,6 @@ Access Mastodon via:
 
     https://localhost
 
-Caddy handles HTTPS and forwards traffic internally.
+Caddy handles HTTPS and forwards traffic internally.  
+
+[↑ Back to the top](#table-of-contents)
