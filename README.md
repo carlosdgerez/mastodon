@@ -1,4 +1,7 @@
 > [!NOTE]
+> This is a implementation guide to install a local version of Mastodon in a contaneirazed environment.   
+> Click here to go to the local guide: - [Local variant Documentation](README-Local-dev-guide.md)  
+
 > Want to learn more about Mastodon?
 > Click below to find out more in a video.
 
