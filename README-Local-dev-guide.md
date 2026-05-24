@@ -4,6 +4,9 @@ This is a custome local version of mastodon guide.
 
 This guide explains how to set up Mastodon locally using Docker, HTTPS via mkcert, and Caddy, including common debugging steps.
 
+
+
+![Diagram](images/mastodonDocker.png)
 ---
 
 ## 1. Prerequisites
